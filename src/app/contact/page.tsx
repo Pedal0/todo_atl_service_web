@@ -8,34 +8,46 @@ export default function Contact() {
   const [showScreamer, setShowScreamer] = useState(false);
   
   useEffect(() => {
-    // Delay the screamer to make it unexpected
-    const timer = setTimeout(() => {
-      setShowScreamer(true);
-      
-      // Play scary sound
-      const audio = new Audio("/scream.mp3");
-      audio.volume = 0.7;
-      audio.play().catch(e => console.error("Audio failed to play:", e));
-      
-      // Hide screamer after 1.5 seconds
-      setTimeout(() => {
-        setShowScreamer(false);
-      }, 1500);
-    }, 2000); // Wait 2 seconds before screamer
+    // Show screamer immediately when component mounts
+    setShowScreamer(true);
     
-    return () => clearTimeout(timer);
+    // Create audio element
+    const audio = new Audio("/scream.mp3");
+    audio.volume = 0.7;
+    
+    // Hide screamer after audio ends
+    audio.addEventListener('ended', () => {
+      setShowScreamer(false);
+    });
+    
+    // Set a backup timer in case audio fails to load or end event doesn't fire
+    const backupTimer = setTimeout(() => {
+      setShowScreamer(false);
+    }, 5000); // Keep image for 5 seconds
+    
+    // Play the sound
+    audio.play().catch(e => {
+      console.error("Audio failed to play:", e);
+      // If audio fails, still hide the screamer after 5 seconds
+    });
+    
+    return () => {
+      audio.pause();
+      audio.removeEventListener('ended', () => setShowScreamer(false));
+      clearTimeout(backupTimer);
+    };
   }, []);
   
   return (
     <div className="flex flex-col justify-center items-center h-screen relative">
       {showScreamer && (
-        <div className="fixed inset-0 bg-black z-50 flex items-center justify-center animate-pulse">
+        <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
           <div className="relative w-full h-full">
             <Image 
               src="/scary-face.jpg" 
               alt="Boo!" 
               fill 
-              className="object-contain animate-bounce"
+              className="object-contain"
               priority
             />
           </div>
